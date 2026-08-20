@@ -85,6 +85,10 @@ có analysis_notes, chưa có final_answer                  → writer
 
 Được lắp ráp thành graph thật bằng LangGraph (`graph/workflow.py::MultiAgentWorkflow`) — Supervisor là node trung tâm duy nhất có cạnh điều kiện (`add_conditional_edges`), mọi worker chỉ có một cạnh cố định quay lại Supervisor.
 
+**Bằng chứng trace thật** (LangSmith, query *"Summarize production guardrails for LLM agents"*, tổng 10.29s) — đúng khớp thứ tự route ở trên: `supervisor → researcher (0.03s) → supervisor → analyst (3.93s) → supervisor → writer (6.32s) → supervisor → done`. `analyst`/`writer` chiếm gần hết thời gian vì đó là 2 bước gọi LLM thật; `researcher` nhanh vì chỉ tra cứu corpus offline, không gọi mạng.
+
+![LangSmith trace: supervisor → researcher → analyst → writer, 10.29s tổng](trace_screenshot.png)
+
 ## Guardrails
 
 - **Max iterations:** `Settings.max_iterations = 6` (env `MAX_ITERATIONS`), enforce là điều kiện **đầu tiên** trong `SupervisorAgent._decide()` — độc lập với logic nghiệp vụ bên dưới, nên vẫn dừng đúng kể cả khi mọi worker khác lỗi. Verified bằng cách giả lập "không worker nào bao giờ cập nhật state" → `route_history` dừng đúng ở lần lặp thứ 7.
